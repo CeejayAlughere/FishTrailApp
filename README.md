@@ -57,6 +57,7 @@ Users can:
 * Search for fishing locations
 * View location information
 * Use map-based location selection when recording fishing activities
+* Use Google map direction capabilities
 
 ### Fishing History
 
@@ -75,25 +76,11 @@ Saved information can include:
 
 The Settings section provides a dedicated area for application preferences and configuration.
 
-### Multilingual Support
-
-FishTrail is designed to support multiple South African languages.
-
-Initial language support includes:
-
-* English
-* isiZulu
-* Afrikaans
 
 The application is structured so that additional languages can be added in the future.
-
-### Offline Support
-
 FishTrail uses local database storage to allow important fishing information to remain available without requiring a continuous internet connection.
-
 The application is designed with offline usage and future synchronisation capabilities in mind.
 
----
 
 ## Application Structure
 
@@ -292,7 +279,7 @@ To build and run FishTrail, you will need:
 ### Clone the Repository
 
 ```bash
-git clone <YOUR-GITHUB-REPOSITORY-URL>
+git clone [<YOUR-GITHUB-REPOSITORY-URL>](https://github.com/CeejayAlughere/FishTrailApp.git )
 ```
 
 Navigate into the project:
@@ -357,18 +344,6 @@ Users can also access the Map and Settings sections from the application's navig
 
 ---
 
-## Multilingual Design
-
-FishTrail is being developed with internationalisation in mind.
-
-The initial supported languages are:
-
-```text
-English
-isiZulu
-Afrikaans
-```
-
 String resources are separated from application logic so that translations can be maintained independently from the user interface code.
 
 This approach also makes it easier to add additional languages in future versions.
@@ -407,10 +382,7 @@ The main goals of FishTrail are to:
 2. Make fishing records accessible from one central application.
 3. Provide location-based fishing functionality.
 4. Allow users to review their fishing history.
-5. Support offline use.
-6. Provide a modern and accessible Android interface.
-7. Support multiple South African languages.
-8. Provide a foundation for future cloud synchronisation and additional fishing services.
+5. Provide a modern and accessible Android interface.
 
 ---
 
@@ -470,7 +442,7 @@ Important security considerations include:
 * Protecting database access
 * Applying appropriate Android permissions
 
-For production deployment, authentication and password storage should use secure, industry-standard mechanisms rather than storing plaintext passwords.
+For production deployment, authentication and password storage will use secure, industry-standard mechanisms rather than storing plaintext passwords.
 
 ---
 
@@ -484,15 +456,6 @@ Additional features and improvements are being developed as the project progress
 
 ---
 
-## Author
-
-**Ceejay**
-
-FishTrail Android Application
-
-Developed as an Android software development project.
-
----
 
 ## License
 

@@ -692,21 +692,5 @@ fun MapScreen(
                 Text("Clear Selected Location")
             }
         }
-
-        if (!selectingLocationForCatch) {
-
-            Button(
-                onClick = onSavedFishingSpotsClick,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(
-                        top = 16.dp,
-                        end = 16.dp
-                    )
-            ) {
-
-                Text("Saved Fishing Spots")
-            }
-        }
     }
 }

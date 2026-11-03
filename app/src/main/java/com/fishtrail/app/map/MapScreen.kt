@@ -5,10 +5,32 @@ import android.location.Geocoder
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fishtrail.app.LocationManager
 import com.fishtrail.app.viewmodel.CatchViewModel
@@ -49,274 +72,89 @@ fun MapScreen(
     ) -> Unit,
     onSavedFishingSpotsClick: () -> Unit
 ) {
-
     val context = LocalContext.current
-
     val coroutineScope = rememberCoroutineScope()
-
-    /*
-     * --------------------------------------------------
-     * LOCATION MANAGER
-     * --------------------------------------------------
-     */
-
-    val locationManager = remember {
-        LocationManager(context)
-    }
-
-    /*
-     * --------------------------------------------------
-     * SAVED CATCHES
-     * --------------------------------------------------
-     *
-     * These are the catches belonging to the currently
-     * logged-in user.
-     */
+    val locationManager = remember { LocationManager(context) }
 
     val catches by catchViewModel.catches.collectAsState()
 
-    /*
-     * --------------------------------------------------
-     * CURRENT GPS LOCATION
-     * --------------------------------------------------
-     */
-
-    var latitude by remember {
-        mutableStateOf<Double?>(null)
-    }
-
-    var longitude by remember {
-        mutableStateOf<Double?>(null)
-    }
-
-    /*
-     * --------------------------------------------------
-     * TEMPORARY MANUAL MAP SELECTION
-     * --------------------------------------------------
-     */
-
-    var selectedLatitude by remember {
-        mutableStateOf<Double?>(null)
-    }
-
-    var selectedLongitude by remember {
-        mutableStateOf<Double?>(null)
-    }
-
-    /*
-     * --------------------------------------------------
-     * PERMISSION STATE
-     * --------------------------------------------------
-     */
+    var latitude by remember { mutableStateOf<Double?>(null) }
+    var longitude by remember { mutableStateOf<Double?>(null) }
+    var selectedLatitude by remember { mutableStateOf<Double?>(null) }
+    var selectedLongitude by remember { mutableStateOf<Double?>(null) }
 
     var locationPermissionGranted by remember {
-        mutableStateOf(
-            locationManager.hasLocationPermission()
-        )
+        mutableStateOf(locationManager.hasLocationPermission())
     }
 
-    /*
-     * --------------------------------------------------
-     * MAP LOADED STATE
-     * --------------------------------------------------
-     *
-     * Google Maps Compose recommends waiting until the
-     * map has finished loading before performing camera
-     * operations.
-     */
-
-    var mapLoaded by remember {
-        mutableStateOf(false)
-    }
-
-    /*
-     * Prevent repeated automatic camera movement.
-     */
-
-    var cameraCenteredOnLocation by remember {
-        mutableStateOf(false)
-    }
-
-    /*
-     * --------------------------------------------------
-     * LOAD USER CATCHES
-     * --------------------------------------------------
-     */
+    var mapLoaded by remember { mutableStateOf(false) }
+    var cameraCenteredOnLocation by remember { mutableStateOf(false) }
 
     LaunchedEffect(username) {
-
         if (username.isNotBlank()) {
-
             catchViewModel.loadCatches(username)
         }
     }
 
-    /*
-     * --------------------------------------------------
-     * LOCATION PERMISSION REQUEST
-     * --------------------------------------------------
-     */
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
-    val permissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-
-            val fineLocationGranted =
-                permissions[
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ] == true
-
-            val coarseLocationGranted =
-                permissions[
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ] == true
-
-            locationPermissionGranted =
-                fineLocationGranted || coarseLocationGranted
-
-            if (locationPermissionGranted) {
-
-                locationManager.getCurrentLocation(
-
-                    onLocationReceived = { lat, lon ->
-
-                        latitude = lat
-                        longitude = lon
-                    },
-
-                    onError = { error ->
-
-                        Log.e(
-                            "FishTrailLocation",
-                            "Location request failed after permission grant: $error"
-                        )
-                    }
-                )
-            }
-        }
-
-    /*
-     * --------------------------------------------------
-     * INITIAL CAMERA POSITION
-     * --------------------------------------------------
-     *
-     * Johannesburg is the fallback position until the
-     * device location becomes available.
-     */
-
-    val cameraPositionState =
-        rememberCameraPositionState {
-
-            position = CameraPosition.fromLatLngZoom(
-                LatLng(
-                    -26.2041,
-                    28.0473
-                ),
-                10f
-            )
-        }
-
-    /*
-     * --------------------------------------------------
-     * INITIAL LOCATION CHECK
-     * --------------------------------------------------
-     *
-     * If permission was already granted when the screen
-     * opened, request the current location.
-     */
-
-    LaunchedEffect(locationPermissionGranted) {
+        locationPermissionGranted = fineLocationGranted || coarseLocationGranted
 
         if (locationPermissionGranted) {
-
             locationManager.getCurrentLocation(
-
                 onLocationReceived = { lat, lon ->
-
                     latitude = lat
                     longitude = lon
                 },
-
                 onError = { error ->
-
-                    Log.e(
-                        "FishTrailLocation",
-                        "Could not get current location: $error"
-                    )
+                    Log.e("FishTrailLocation", "Location request failed after permission grant: $error")
                 }
             )
         }
     }
 
-    /*
-     * --------------------------------------------------
-     * CENTER CAMERA ON CURRENT LOCATION
-     * --------------------------------------------------
-     *
-     * This only happens:
-     *
-     * 1. After the map has loaded.
-     * 2. When a GPS location exists.
-     * 3. When the user is NOT selecting a catch location.
-     * 4. Once per MapScreen instance.
-     */
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(
+            LatLng(-26.2041, 28.0473),
+            10f
+        )
+    }
 
-    LaunchedEffect(
-        mapLoaded,
-        latitude,
-        longitude,
-        selectingLocationForCatch
-    ) {
+    LaunchedEffect(locationPermissionGranted) {
+        if (locationPermissionGranted) {
+            locationManager.getCurrentLocation(
+                onLocationReceived = { lat, lon ->
+                    latitude = lat
+                    longitude = lon
+                },
+                onError = { error ->
+                    Log.e("FishTrailLocation", "Could not get current location: $error")
+                }
+            )
+        }
+    }
 
-        if (
-            mapLoaded &&
-            latitude != null &&
-            longitude != null &&
-            !selectingLocationForCatch &&
-            !cameraCenteredOnLocation
-        ) {
-
-            cameraPositionState.position =
-                CameraPosition.fromLatLngZoom(
-                    LatLng(
-                        latitude!!,
-                        longitude!!
-                    ),
-                    15f
-                )
-
+    LaunchedEffect(mapLoaded, latitude, longitude, selectingLocationForCatch) {
+        if (mapLoaded && latitude != null && longitude != null && !selectingLocationForCatch && !cameraCenteredOnLocation) {
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(
+                LatLng(latitude!!, longitude!!),
+                15f
+            )
             cameraCenteredOnLocation = true
         }
     }
 
-    /*
-     * --------------------------------------------------
-     * MAP UI
-     * --------------------------------------------------
-     */
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-
+    Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
-
             modifier = Modifier.fillMaxSize(),
-
             cameraPositionState = cameraPositionState,
-
-            /*
-             * The map only displays the My Location layer
-             * when the app actually has location permission.
-             */
             properties = MapProperties(
                 isMyLocationEnabled = locationPermissionGranted
             ),
-
-            /*
-             * Standard map controls.
-             */
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = true,
                 zoomGesturesEnabled = true,
@@ -325,278 +163,105 @@ fun MapScreen(
                 tiltGesturesEnabled = true,
                 myLocationButtonEnabled = locationPermissionGranted
             ),
-
-            /*
-             * Mark the map as ready only after Google Maps
-             * has completely rendered the map.
-             */
             onMapLoaded = {
-
                 mapLoaded = true
-
-                Log.d(
-                    "FishTrailMap",
-                    "Google Map loaded successfully."
-                )
+                Log.d("FishTrailMap", "Google Map loaded successfully.")
             },
-
-            /*
-             * --------------------------------------------------
-             * MAP TAP HANDLING
-             * --------------------------------------------------
-             */
-
             onMapClick = { latLng ->
-
-                val tappedLatitude =
-                    latLng.latitude
-
-                val tappedLongitude =
-                    latLng.longitude
-
-                /*
-                 * --------------------------------------------------
-                 * CATCH LOCATION SELECTION MODE
-                 * --------------------------------------------------
-                 */
+                val tappedLatitude = latLng.latitude
+                val tappedLongitude = latLng.longitude
 
                 if (selectingLocationForCatch) {
-
-                    /*
-                     * Coordinates are captured immediately.
-                     *
-                     * We always have a safe fallback name so
-                     * reverse geocoding cannot prevent navigation.
-                     */
-
                     coroutineScope.launch {
+                        var locationName = "Selected Map Location"
 
-                        var locationName =
-                            "Selected Map Location"
-
-                        /*
-                         * Give Geocoder a short amount of time.
-                         *
-                         * If Geocoder is unavailable, slow, or fails,
-                         * the timeout returns null and the fallback name
-                         * is used.
-                         */
-                        val geocodedName =
-                            withTimeoutOrNull(1500L) {
-
-                                try {
-
-                                    withContext(Dispatchers.IO) {
-
-                                        @Suppress("DEPRECATION")
-                                        val geocoder =
-                                            Geocoder(context)
-
-                                        @Suppress("DEPRECATION")
-                                        val addresses =
-                                            geocoder.getFromLocation(
-                                                tappedLatitude,
-                                                tappedLongitude,
-                                                1
-                                            )
-
-                                        val address =
-                                            addresses
-                                                ?.firstOrNull()
-
-                                        when {
-
-                                            !address?.locality.isNullOrBlank() ->
-                                                address?.locality
-
-                                            !address?.subAdminArea.isNullOrBlank() ->
-                                                address?.subAdminArea
-
-                                            !address?.adminArea.isNullOrBlank() ->
-                                                address?.adminArea
-
-                                            !address?.getAddressLine(0).isNullOrBlank() ->
-                                                address?.getAddressLine(0)
-
-                                            else ->
-                                                null
-                                        }
-                                    }
-
-                                } catch (e: Exception) {
-
-                                    Log.e(
-                                        "FishTrailGeocoder",
-                                        "Reverse geocoding failed.",
-                                        e
+                        val geocodedName = withTimeoutOrNull(1500L) {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    @Suppress("DEPRECATION")
+                                    val geocoder = Geocoder(context)
+                                    @Suppress("DEPRECATION")
+                                    val addresses = geocoder.getFromLocation(
+                                        tappedLatitude,
+                                        tappedLongitude,
+                                        1
                                     )
+                                    val address = addresses?.firstOrNull()
 
-                                    null
+                                    when {
+                                        !address?.locality.isNullOrBlank() -> address?.locality
+                                        !address?.subAdminArea.isNullOrBlank() -> address?.subAdminArea
+                                        !address?.adminArea.isNullOrBlank() -> address?.adminArea
+                                        !address?.getAddressLine(0).isNullOrBlank() -> address?.getAddressLine(0)
+                                        else -> null
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                Log.e("FishTrailGeocoder", "Reverse geocoding failed.", e)
+                                null
                             }
-
-                        if (!geocodedName.isNullOrBlank()) {
-
-                            locationName =
-                                geocodedName
                         }
 
-                        /*
-                         * ALWAYS return the selected location.
-                         *
-                         * Even if Geocoder fails, Catch Log receives
-                         * the coordinates and fallback location name.
-                         */
+                        if (!geocodedName.isNullOrBlank()) {
+                            locationName = geocodedName
+                        }
+
                         onLocationSelected(
                             tappedLatitude,
                             tappedLongitude,
                             locationName
                         )
                     }
-
                 } else {
-
-                    /*
-                     * --------------------------------------------------
-                     * NORMAL MAP MODE
-                     * --------------------------------------------------
-                     *
-                     * Do NOT navigate anywhere.
-                     *
-                     * Simply place a temporary marker where the user
-                     * tapped the map.
-                     */
-
-                    selectedLatitude =
-                        tappedLatitude
-
-                    selectedLongitude =
-                        tappedLongitude
+                    selectedLatitude = tappedLatitude
+                    selectedLongitude = tappedLongitude
                 }
             }
-
         ) {
-
-            /*
-             * --------------------------------------------------
-             * CURRENT LOCATION MARKER
-             * --------------------------------------------------
-             */
-
-            if (
-                latitude != null &&
-                longitude != null
-            ) {
-
-                val currentLocation =
-                    LatLng(
-                        latitude!!,
-                        longitude!!
-                    )
-
+            if (latitude != null && longitude != null) {
+                val currentLocation = LatLng(latitude!!, longitude!!)
                 Marker(
-                    state = remember(
-                        latitude,
-                        longitude
-                    ) {
-                        MarkerState(
-                            position = currentLocation
-                        )
+                    state = remember(latitude, longitude) {
+                        MarkerState(position = currentLocation)
                     },
                     title = "My Location",
                     snippet = "Current device location"
                 )
             }
 
-            /*
-             * --------------------------------------------------
-             * MANUALLY SELECTED MARKER
-             * --------------------------------------------------
-             */
-
-            if (
-                selectedLatitude != null &&
-                selectedLongitude != null
-            ) {
-
-                val selectedLocation =
-                    LatLng(
-                        selectedLatitude!!,
-                        selectedLongitude!!
-                    )
-
+            if (selectedLatitude != null && selectedLongitude != null) {
+                val selectedLocation = LatLng(selectedLatitude!!, selectedLongitude!!)
                 Marker(
-                    state = remember(
-                        selectedLatitude,
-                        selectedLongitude
-                    ) {
-                        MarkerState(
-                            position = selectedLocation
-                        )
+                    state = remember(selectedLatitude, selectedLongitude) {
+                        MarkerState(position = selectedLocation)
                     },
                     title = "Selected Fishing Location",
                     snippet = "Location selected manually"
                 )
             }
 
-            /*
-             * --------------------------------------------------
-             * SAVED CATCH MARKERS
-             * --------------------------------------------------
-             */
-
             catches.forEach { fishingCatch ->
+                val catchLatitude = fishingCatch.latitude
+                val catchLongitude = fishingCatch.longitude
 
-                val catchLatitude =
-                    fishingCatch.latitude
-
-                val catchLongitude =
-                    fishingCatch.longitude
-
-                if (
-                    catchLatitude != null &&
-                    catchLongitude != null
-                ) {
-
-                    val catchLocation =
-                        LatLng(
-                            catchLatitude,
-                            catchLongitude
-                        )
-
+                if (catchLatitude != null && catchLongitude != null) {
+                    val catchLocation = LatLng(catchLatitude, catchLongitude)
                     Marker(
                         state = remember(
                             fishingCatch.id,
                             catchLatitude,
                             catchLongitude
                         ) {
-                            MarkerState(
-                                position = catchLocation
-                            )
+                            MarkerState(position = catchLocation)
                         },
                         title = fishingCatch.species,
                         snippet = buildString {
-
-                            append(
-                                "${fishingCatch.weight} kg"
-                            )
-
+                            append("${fishingCatch.weight} kg")
                             append(" • ")
-
-                            append(
-                                "${fishingCatch.length} cm"
-                            )
-
-                            if (
-                                fishingCatch.locationName
-                                    .isNotBlank()
-                            ) {
-
+                            append("${fishingCatch.length} cm")
+                            if (fishingCatch.locationName.isNotBlank()) {
                                 append(" • ")
-
-                                append(
-                                    fishingCatch.locationName
-                                )
+                                append(fishingCatch.locationName)
                             }
                         }
                     )
@@ -604,92 +269,156 @@ fun MapScreen(
             }
         }
 
-        /*
-         * --------------------------------------------------
-         * CATCH LOCATION SELECTION INSTRUCTIONS
-         * --------------------------------------------------
-         */
-
+        // Top Floating Banner Overlay for Catch Location Selection
         if (selectingLocationForCatch) {
-
-            Button(
-                onClick = {
-                    /*
-                     * Selection is completed by tapping the map.
-                     *
-                     * Back navigation remains controlled by
-                     * FishTrailNavigation.
-                     */
-                },
-                enabled = false,
+            Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 6.dp
             ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Place,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Pick Catch Location",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "Tap any point on the map to select coordinates",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                        )
+                    }
+                }
+            }
+        }
 
+        // Top-Right Floating Action Button for Saved Fishing Spots
+        FloatingActionButton(
+            onClick = onSavedFishingSpotsClick,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 16.dp, end = 16.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Bookmark,
+                    contentDescription = "Saved Spots",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text =
-                        "Tap the map to choose a fishing location"
+                    text = "Saved Spots",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
 
-        /*
-         * --------------------------------------------------
-         * LOCATION PERMISSION BUTTON
-         * --------------------------------------------------
-         */
-
-        if (
-            !locationPermissionGranted &&
-            !selectingLocationForCatch
-        ) {
-
-            Button(
+        // Clear Selection Floating Button
+        if (selectedLatitude != null && selectedLongitude != null && !selectingLocationForCatch) {
+            OutlinedButton(
                 onClick = {
-
-                    permissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                },
-
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-            ) {
-
-                Text("Allow Location")
-            }
-        }
-
-        /*
-         * --------------------------------------------------
-         * CLEAR MANUAL LOCATION
-         * --------------------------------------------------
-         */
-
-        if (
-            selectedLatitude != null &&
-            selectedLongitude != null &&
-            !selectingLocationForCatch
-        ) {
-
-            Button(
-                onClick = {
-
                     selectedLatitude = null
                     selectedLongitude = null
                 },
-
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
+                Icon(
+                    imageVector = Icons.Filled.Clear,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Clear Selection")
+            }
+        }
 
-                Text("Clear Selected Location")
+        // Bottom Permission Banner Card
+        if (!locationPermissionGranted && !selectingLocationForCatch) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Location Permission Required",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = "Allow location access to view your current position on the fishing map.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = {
+                            permissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MyLocation,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Allow Location Access")
+                    }
+                }
             }
         }
     }

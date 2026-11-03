@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "251626831007",
+    "project_id": "app-6936ff06",
+    "storage_bucket": "app-6936ff06.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251626831007:android:058aa5a8c62e711046f6aa",
+        "android_client_info": {
+          "package_name": "com.fishtrail.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "251626831007-qsqmo4bss388hl3v9tnn1npum4eanadk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fishtrail.app",
+            "certificate_hash": "36af913e08848a2e8ed94257b8793730a923dda5"
+          }
+        },
+        {
+          "client_id": "251626831007-odtb2dgasvcosc886gno6330ognl9cgo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGnCMTJWBqW9a0gVjVQbHvSOO6p-RbDzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "251626831007-odtb2dgasvcosc886gno6330ognl9cgo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

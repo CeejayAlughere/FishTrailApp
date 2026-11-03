@@ -62,7 +62,7 @@ fun FishTrailNavigation(
     }
 
     val authViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(database.userDao())
+        factory = AuthViewModelFactory()
     )
 
     val catchViewModel: CatchViewModel = viewModel(
@@ -214,22 +214,20 @@ fun FishTrailNavigation(
 
                     HomeScreen(
                         catchViewModel = catchViewModel,
+                        authViewModel = authViewModel,
                         username = loggedInUsername,
-
                         onLogCatchClick = {
                             navController.navigate("catchlog")
                         },
-
                         onOpenMapClick = {
                             navController.navigate("map")
                         },
 
                         onLogoutClick = {
-
+                            authViewModel.logout()
                             loggedInUsername = ""
 
                             navController.navigate("login") {
-
                                 popUpTo("home") {
                                     inclusive = true
                                 }
@@ -362,11 +360,10 @@ fun FishTrailNavigation(
                         },
 
                         onLogoutClick = {
-
+                            authViewModel.logout()
                             loggedInUsername = ""
 
                             navController.navigate("login") {
-
                                 popUpTo("home") {
                                     inclusive = true
                                 }

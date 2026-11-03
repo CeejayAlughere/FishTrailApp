@@ -1,6 +1,5 @@
 package com.fishtrail.app.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,32 +11,63 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = OceanTealDark,
+    onPrimary = OnOceanTealDark,
+    primaryContainer = OceanTealContainerDark,
+    onPrimaryContainer = OnOceanTealContainerDark,
+    secondary = MarineBlueDark,
+    onSecondary = OnMarineBlueDark,
+    secondaryContainer = MarineBlueContainerDark,
+    onSecondaryContainer = OnMarineBlueContainerDark,
+    tertiary = ForestGreenDark,
+    onTertiary = OnForestGreenDark,
+    tertiaryContainer = ForestGreenContainerDark,
+    onTertiaryContainer = OnForestGreenContainerDark,
+    background = BackgroundDark,
+    onBackground = OnBackgroundDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    error = ErrorDark,
+    onError = OnErrorDark,
+    errorContainer = ErrorContainerDark,
+    onErrorContainer = OnErrorContainerDark,
+    outline = OutlineDark,
+    outlineVariant = OutlineVariantDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = OceanTealLight,
+    onPrimary = OnOceanTealLight,
+    primaryContainer = OceanTealContainerLight,
+    onPrimaryContainer = OnOceanTealContainerLight,
+    secondary = MarineBlueLight,
+    onSecondary = OnMarineBlueLight,
+    secondaryContainer = MarineBlueContainerLight,
+    onSecondaryContainer = OnMarineBlueContainerLight,
+    tertiary = ForestGreenLight,
+    onTertiary = OnForestGreenLight,
+    tertiaryContainer = ForestGreenContainerLight,
+    onTertiaryContainer = OnForestGreenContainerLight,
+    background = BackgroundLight,
+    onBackground = OnBackgroundLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    error = ErrorLight,
+    onError = OnErrorLight,
+    errorContainer = ErrorContainerLight,
+    onErrorContainer = OnErrorContainerLight,
+    outline = OutlineLight,
+    outlineVariant = OutlineVariantLight
 )
 
 @Composable
 fun FishTrailTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Set to false to maintain branded nautical aesthetic
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -45,7 +75,6 @@ fun FishTrailTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

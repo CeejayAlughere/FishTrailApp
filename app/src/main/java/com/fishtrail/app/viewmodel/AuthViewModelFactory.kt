@@ -2,11 +2,8 @@ package com.fishtrail.app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.fishtrail.app.data.UserDao
 
-class AuthViewModelFactory(
-    private val userDao: UserDao
-) : ViewModelProvider.Factory {
+class AuthViewModelFactory : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(
@@ -14,9 +11,11 @@ class AuthViewModelFactory(
     ): T {
 
         if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
-            return AuthViewModel(userDao) as T
+            return AuthViewModel() as T
         }
 
-        throw IllegalArgumentException("Unknown ViewModel class")
+        throw IllegalArgumentException(
+            "Unknown ViewModel class: ${modelClass.name}"
+        )
     }
 }

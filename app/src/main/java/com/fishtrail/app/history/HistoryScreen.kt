@@ -298,6 +298,7 @@ fun HistoryScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
+                                SyncStatusIndicator(syncStatus = catch.syncStatus)
                             }
 
                             // Weight & Length Metric Badges
@@ -454,5 +455,43 @@ fun HistoryScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SyncStatusIndicator(syncStatus: String) {
+
+    val isSynced = syncStatus.equals("SYNCED", ignoreCase = true)
+
+    val backgroundColor = if (isSynced) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val textColor = if (isSynced) {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = backgroundColor
+    ) {
+        Text(
+            text = if (isSynced) {
+                "Synced to cloud"
+            } else {
+                "Pending sync"
+            },
+            color = textColor,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(
+                horizontal = 12.dp,
+                vertical = 6.dp
+            )
+        )
     }
 }

@@ -1,3 +1,4 @@
+
 package com.fishtrail.app.data
 
 import androidx.room.Entity
@@ -29,5 +30,8 @@ data class Catch(
 
     val latitude: Double?,
 
-    val longitude: Double?
+    val longitude: Double?,
+
+    // Synchronisation status
+    val syncStatus: String = "PENDING"
 )

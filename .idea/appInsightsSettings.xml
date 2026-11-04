@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.fishtrail.app" />
+                  <option name="mobileSdkAppId" value="1:251626831007:android:058aa5a8c62e711046f6aa" />
+                  <option name="projectId" value="app-6936ff06" />
+                  <option name="projectNumber" value="251626831007" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

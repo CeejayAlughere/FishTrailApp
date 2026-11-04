@@ -1,3 +1,4 @@
+
 package com.fishtrail.app.data
 
 import android.content.Context
@@ -12,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         User::class,
         Catch::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class FishTrailDatabase : RoomDatabase() {
@@ -28,11 +29,7 @@ abstract class FishTrailDatabase : RoomDatabase() {
 
         private val MIGRATION_6_7 =
             object : Migration(6, 7) {
-
-                override fun migrate(
-                    database: SupportSQLiteDatabase
-                ) {
-
+                override fun migrate(database: SupportSQLiteDatabase) {
                     database.execSQL(
                         """
                         CREATE TABLE IF NOT EXISTS saved_fishing_spots (
@@ -50,18 +47,28 @@ abstract class FishTrailDatabase : RoomDatabase() {
 
         private val MIGRATION_7_8 =
             object : Migration(7, 8) {
-
-                override fun migrate(
-                    database: SupportSQLiteDatabase
-                ) {
-
-                    database.execSQL("DROP TABLE IF EXISTS saved_fishing_spots")
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        "DROP TABLE IF EXISTS saved_fishing_spots"
+                    )
                 }
             }
 
-        fun getDatabase(
-            context: Context
-        ): FishTrailDatabase {
+        // Version 8 to 9: Add catch synchronisation status.
+        private val MIGRATION_8_9 =
+            object : Migration(8, 9) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+
+                    database.execSQL(
+                        """
+                        ALTER TABLE catches
+                        ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING'
+                        """.trimIndent()
+                    )
+                }
+            }
+
+        fun getDatabase(context: Context): FishTrailDatabase {
 
             return INSTANCE ?: synchronized(this) {
 
@@ -70,12 +77,14 @@ abstract class FishTrailDatabase : RoomDatabase() {
                     FishTrailDatabase::class.java,
                     "fishtrail_database"
                 )
-                    .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
+                    )
                     .build()
 
                 INSTANCE = instance
-
                 instance
             }
         }

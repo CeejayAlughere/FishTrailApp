@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,11 +55,20 @@ fun FishTrailNavigation(
     )
 
     val catchViewModel: CatchViewModel = viewModel(
-        factory = CatchViewModelFactory(database.catchDao())
+        factory = CatchViewModelFactory(
+            database.catchDao(),
+            context
+        )
     )
 
     var loggedInUsername by remember {
         mutableStateOf("")
+    }
+
+    LaunchedEffect(loggedInUsername) {
+        if (loggedInUsername.isNotBlank()) {
+            catchViewModel.syncPendingCatches()
+        }
     }
 
     var selectedLatitude by remember {

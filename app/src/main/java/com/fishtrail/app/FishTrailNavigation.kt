@@ -1,17 +1,6 @@
 package com.fishtrail.app
 
 import androidx.compose.foundation.layout.Box
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import com.fishtrail.app.savedspots.SavedFishingSpotsScreen
-import com.fishtrail.app.viewmodel.SavedFishingSpotViewModel
-import com.fishtrail.app.viewmodel.SavedFishingSpotViewModelFactory
-import com.fishtrail.app.weather.WeatherApiService
-import com.fishtrail.app.weather.WeatherRepository
-import com.fishtrail.app.weather.WeatherScreen
-import com.fishtrail.app.weather.WeatherViewModel
-import com.fishtrail.app.weather.WeatherViewModelFactory
-import com.google.android.libraries.places.api.Places
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -35,7 +24,6 @@ import com.fishtrail.app.history.HistoryScreen
 import com.fishtrail.app.home.HomeScreen
 import com.fishtrail.app.map.MapScreen
 import com.fishtrail.app.settings.AppPreferences
-import com.fishtrail.app.settings.AppPreferences.isDarkModeEnabled
 import com.fishtrail.app.settings.SettingsScreen
 import com.fishtrail.app.viewmodel.AuthViewModel
 import com.fishtrail.app.viewmodel.AuthViewModelFactory
@@ -69,33 +57,6 @@ fun FishTrailNavigation(
         factory = CatchViewModelFactory(database.catchDao())
     )
 
-    val placesClient = remember {
-        Places.createClient(context)
-    }
-
-    val savedFishingSpotViewModel:
-            SavedFishingSpotViewModel = viewModel(
-        factory =
-            SavedFishingSpotViewModelFactory(
-                dao = database.savedFishingSpotDao(),
-                placesClient = placesClient
-            )
-    )
-
-    val weatherRepository = remember {
-        WeatherRepository(
-            WeatherApiService.create()
-        )
-    }
-
-    val weatherViewModel:
-            WeatherViewModel = viewModel(
-        factory =
-            WeatherViewModelFactory(
-                weatherRepository
-            )
-    )
-
     var loggedInUsername by remember {
         mutableStateOf("")
     }
@@ -125,20 +86,10 @@ fun FishTrailNavigation(
         "catchlog",
         "map",
         "history",
-        "settings",
-        "savedspots",
-        "forecast/{spotId}"
+        "settings"
     )
 
-    val bottomBarRoute = when (currentRoute) {
-
-        "savedspots",
-        "forecast/{spotId}" ->
-            "map"
-
-        else ->
-            currentRoute ?: "home"
-    }
+    val bottomBarRoute = currentRoute ?: "home"
 
     Scaffold(
         bottomBar = {
@@ -283,60 +234,8 @@ fun FishTrailNavigation(
                             selectingLocationForCatch = false
 
                             navController.popBackStack()
-                        },
-
-                        onSavedFishingSpotsClick = {
-
-                            navController.navigate(
-                                "savedspots"
-                            )
                         }
                     )
-                }
-
-                composable("savedspots") {
-
-                    SavedFishingSpotsScreen(
-                        username = loggedInUsername,
-
-                        savedFishingSpotViewModel =
-                            savedFishingSpotViewModel,
-
-                        onForecastClick = { spotId ->
-
-                            navController.navigate(
-                                "forecast/$spotId"
-                            )
-                        }
-                    )
-                }
-
-                composable(
-                    route = "forecast/{spotId}",
-
-                    arguments = listOf(
-                        navArgument("spotId") {
-                            type = NavType.IntType
-                        }
-                    )
-                ) { backStackEntry ->
-
-                    val spotId =
-                        backStackEntry.arguments
-                            ?.getInt("spotId")
-
-                    if (spotId != null) {
-
-                        WeatherScreen(
-                            spotId = spotId,
-
-                            savedFishingSpotViewModel =
-                                savedFishingSpotViewModel,
-
-                            weatherViewModel =
-                                weatherViewModel
-                        )
-                    }
                 }
 
                 composable("history") {

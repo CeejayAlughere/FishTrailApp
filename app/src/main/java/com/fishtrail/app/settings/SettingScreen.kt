@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fishtrail.app.LocationManager
 import com.fishtrail.app.viewmodel.AuthViewModel
+import androidx.compose.material3.OutlinedTextField
 
 @Composable
 fun SettingsScreen(
@@ -69,17 +70,49 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
 
-    var userFullName by remember { mutableStateOf("") }
-    var userEmail by remember { mutableStateOf("") }
+    val initialEmail = remember { authViewModel.getCurrentUserEmail() }
+    val initialDisplayName = remember { authViewModel.getCurrentUserDisplayName() }
+
+    var userFullName by remember { mutableStateOf(initialDisplayName) }
+    var userEmail by remember { mutableStateOf(initialEmail) }
+
+    var editedFullName by remember { mutableStateOf(initialDisplayName) }
+    var editedEmail by remember { mutableStateOf(initialEmail) }
+
+    var isEditingProfile by remember { mutableStateOf(false) }
+    var isSavingProfile by remember { mutableStateOf(false) }
+
+    var profileMessage by remember { mutableStateOf("") }
+    var profileMessageIsError by remember { mutableStateOf(false) }
+
+    var emailVerificationPending by remember {
+        mutableStateOf(false)
+    }
 
     LaunchedEffect(username) {
+        val currentEmail = authViewModel.getCurrentUserEmail()
+        val currentDisplayName = authViewModel.getCurrentUserDisplayName()
+
         if (username.isNotBlank()) {
             authViewModel.getUserByUsername(username) { user ->
                 if (user != null) {
-                    userFullName = user.fullName
-                    userEmail = user.email
+                    userFullName = user.fullName.ifBlank { currentDisplayName }
+                    userEmail = user.email.ifBlank { currentEmail }
+
+                    editedFullName = userFullName
+                    editedEmail = userEmail
+                } else {
+                    if (currentEmail.isNotBlank()) userEmail = currentEmail
+                    if (currentDisplayName.isNotBlank()) userFullName = currentDisplayName
+                    editedFullName = userFullName
+                    editedEmail = userEmail
                 }
             }
+        } else {
+            if (currentEmail.isNotBlank()) userEmail = currentEmail
+            if (currentDisplayName.isNotBlank()) userFullName = currentDisplayName
+            editedFullName = userFullName
+            editedEmail = userEmail
         }
     }
 
@@ -140,7 +173,82 @@ fun SettingsScreen(
             }
         }
 
-        // Account Details Card
+        // =========================================================
+        // ACCOUNT DETAILS CARD
+        // =========================================================
+
+        fun continueWithEmailUpdate() {
+            val cleanEmail = editedEmail.trim().lowercase()
+
+            if (cleanEmail != userEmail.trim().lowercase()) {
+
+                authViewModel.updateEmail(cleanEmail) { success, message ->
+
+                    isSavingProfile = false
+                    profileMessage = message
+                    profileMessageIsError = !success
+
+                    if (success) {
+                        emailVerificationPending = true
+                        isEditingProfile = false
+                    }
+                }
+
+            } else {
+                isSavingProfile = false
+                isEditingProfile = false
+                profileMessage = "Your profile details have been updated successfully."
+                profileMessageIsError = false
+            }
+        }
+
+        fun saveProfileChanges() {
+            val cleanName = editedFullName.trim()
+            val cleanEmail = editedEmail.trim().lowercase()
+
+            if (cleanName.isBlank()) {
+                profileMessage = "Please enter your full name."
+                profileMessageIsError = true
+                return
+            }
+
+            if (cleanName.length < 2) {
+                profileMessage = "Your name must contain at least 2 characters."
+                profileMessageIsError = true
+                return
+            }
+
+            if (!android.util.Patterns.EMAIL_ADDRESS
+                    .matcher(cleanEmail)
+                    .matches()
+            ) {
+                profileMessage = "Please enter a valid email address."
+                profileMessageIsError = true
+                return
+            }
+
+            isSavingProfile = true
+            profileMessage = ""
+
+            if (cleanName != userFullName.trim()) {
+
+                authViewModel.updateFullName(cleanName) { success, message ->
+
+                    if (success) {
+                        userFullName = cleanName
+                        continueWithEmailUpdate()
+                    } else {
+                        isSavingProfile = false
+                        profileMessage = message
+                        profileMessageIsError = true
+                    }
+                }
+
+            } else {
+                continueWithEmailUpdate()
+            }
+        }
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -153,89 +261,247 @@ fun SettingsScreen(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Account Details",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+
+                // Account Details Heading
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.AccountCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = "Account Details",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (!isEditingProfile) {
+                        TextButton(
+                            onClick = {
+                                editedFullName = userFullName
+                                editedEmail = userEmail
+                                profileMessage = ""
+                                isEditingProfile = true
+                            }
+                        ) {
+                            Text("Edit")
+                        }
+                    }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
 
-                // Full Name Row
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Badge,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                // FULL NAME
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Badge,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         Text(
                             text = "Full Name",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+
+                    if (isEditingProfile) {
+                        OutlinedTextField(
+                            value = editedFullName,
+                            onValueChange = {
+                                editedFullName = it
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            label = { Text("Enter full name") },
+                            enabled = !isSavingProfile
+                        )
+                    } else {
                         Text(
-                            text = userFullName.ifBlank { username },
+                            text = userFullName.ifBlank {
+                                "Name not available"
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                // Email Row
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Email,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                // EMAIL ADDRESS
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Email,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         Text(
-                            text = "Email",
+                            text = "Email Address",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+
+                    if (isEditingProfile) {
+                        OutlinedTextField(
+                            value = editedEmail,
+                            onValueChange = {
+                                editedEmail = it
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            label = { Text("Enter email address") },
+                            enabled = !isSavingProfile
+                        )
+                    } else {
                         Text(
-                            text = userEmail.ifBlank { "User Email" },
+                            text = userEmail.ifBlank {
+                                "Email not available"
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                // Username Row
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                // USERNAME - READ ONLY
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         Text(
                             text = "Username",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+
+                    Text(
+                        text = username,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // SAVE AND CANCEL BUTTONS
+                if (isEditingProfile) {
+
+                    Button(
+                        onClick = {
+                            saveProfileChanges()
+                        },
+                        enabled = !isSavingProfile,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
                         Text(
-                            text = username,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
+                            text = if (isSavingProfile) {
+                                "Saving..."
+                            } else {
+                                "Save Changes"
+                            }
                         )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            editedFullName = userFullName
+                            editedEmail = userEmail
+                            isEditingProfile = false
+                            profileMessage = ""
+                        },
+                        enabled = !isSavingProfile,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+
+                // SUCCESS AND ERROR MESSAGES
+                if (profileMessage.isNotBlank()) {
+                    Text(
+                        text = profileMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (profileMessageIsError) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
+                    )
+                }
+
+                // EMAIL VERIFICATION CONFIRMATION
+                if (emailVerificationPending) {
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    Text(
+                        text = "Check your new email address and complete the Firebase verification process.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = {
+                            isSavingProfile = true
+
+                            authViewModel.refreshEmailAfterVerification {
+                                    success, message, updatedEmail ->
+
+                                isSavingProfile = false
+                                profileMessage = message
+                                profileMessageIsError = !success
+
+                                if (success && updatedEmail != null) {
+                                    userEmail = updatedEmail
+                                    editedEmail = updatedEmail
+                                    emailVerificationPending = false
+                                }
+                            }
+                        },
+                        enabled = !isSavingProfile,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("I've Verified My Email")
                     }
                 }
             }

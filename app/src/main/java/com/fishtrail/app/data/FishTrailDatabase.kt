@@ -10,10 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         User::class,
-        Catch::class,
-        SavedFishingSpot::class
+        Catch::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class FishTrailDatabase : RoomDatabase() {
@@ -21,8 +20,6 @@ abstract class FishTrailDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
 
     abstract fun catchDao(): CatchDao
-
-    abstract fun savedFishingSpotDao(): SavedFishingSpotDao
 
     companion object {
 
@@ -51,6 +48,17 @@ abstract class FishTrailDatabase : RoomDatabase() {
                 }
             }
 
+        private val MIGRATION_7_8 =
+            object : Migration(7, 8) {
+
+                override fun migrate(
+                    database: SupportSQLiteDatabase
+                ) {
+
+                    database.execSQL("DROP TABLE IF EXISTS saved_fishing_spots")
+                }
+            }
+
         fun getDatabase(
             context: Context
         ): FishTrailDatabase {
@@ -62,7 +70,7 @@ abstract class FishTrailDatabase : RoomDatabase() {
                     FishTrailDatabase::class.java,
                     "fishtrail_database"
                 )
-                    .addMigrations(MIGRATION_6_7)
+                    .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
                     .fallbackToDestructiveMigration()
                     .build()
 

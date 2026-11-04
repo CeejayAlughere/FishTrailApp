@@ -394,6 +394,20 @@ class AuthViewModel : ViewModel() {
                 // Existing FishTrail Google user
                 if (document.exists()) {
 
+                    val existingEmail = document.getString("email") ?: ""
+                    val existingFullName = document.getString("fullName") ?: ""
+
+                    val updates = mutableMapOf<String, Any>()
+                    if (existingEmail.isBlank() && cleanEmail.isNotBlank()) {
+                        updates["email"] = cleanEmail
+                    }
+                    if (existingFullName.isBlank() && fullName.isNotBlank()) {
+                        updates["fullName"] = fullName.trim()
+                    }
+                    if (updates.isNotEmpty()) {
+                        userDocument.update(updates)
+                    }
+
                     val username =
                         document.getString("username")
                             ?: generateBaseUsername(
@@ -560,17 +574,22 @@ class AuthViewModel : ViewModel() {
                 val document =
                     querySnapshot.documents.first()
 
+                val emailFromDoc = document.getString("email") ?: ""
+                val firebaseEmail = auth.currentUser?.email ?: ""
+                val finalEmail = emailFromDoc.ifBlank { firebaseEmail }
+
+                val nameFromDoc = document.getString("fullName") ?: ""
+                val firebaseName = auth.currentUser?.displayName ?: ""
+                val finalName = nameFromDoc.ifBlank { firebaseName }
+
                 val profile =
                     UserProfile(
                         uid =
                             document.getString("uid")
+                                ?: auth.currentUser?.uid
                                 ?: "",
-                        fullName =
-                            document.getString("fullName")
-                                ?: "",
-                        email =
-                            document.getString("email")
-                                ?: "",
+                        fullName = finalName,
+                        email = finalEmail,
                         username =
                             document.getString("username")
                                 ?: ""
@@ -635,6 +654,155 @@ class AuthViewModel : ViewModel() {
             }
     }
 
+
+    // =========================================================
+    // UPDATE FULL NAME
+    // =========================================================
+
+    fun updateFullName(
+        newFullName: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val cleanFullName = newFullName.trim()
+        val firebaseUser = auth.currentUser
+
+        if (firebaseUser == null) {
+            onResult(false, "Please log in again.")
+            return
+        }
+
+        if (cleanFullName.isBlank()) {
+            onResult(false, "Full name cannot be empty.")
+            return
+        }
+
+        if (cleanFullName.length < 2) {
+            onResult(false, "Full name must contain at least 2 characters.")
+            return
+        }
+
+        firestore.collection("users")
+            .document(firebaseUser.uid)
+            .update("fullName", cleanFullName)
+            .addOnSuccessListener {
+                onResult(true, "Full name updated successfully.")
+            }
+            .addOnFailureListener { exception ->
+                onResult(
+                    false,
+                    exception.message ?: "Unable to update your name."
+                )
+            }
+    }
+
+    // =========================================================
+    // UPDATE EMAIL ADDRESS
+    // =========================================================
+
+    fun updateEmail(
+        newEmail: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val cleanEmail = newEmail.trim().lowercase()
+        val firebaseUser = auth.currentUser
+
+        if (firebaseUser == null) {
+            onResult(false, "Please log in again.")
+            return
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS
+                .matcher(cleanEmail)
+                .matches()
+        ) {
+            onResult(false, "Please enter a valid email address.")
+            return
+        }
+
+        if (cleanEmail == firebaseUser.email?.lowercase()) {
+            onResult(false, "This is already your current email address.")
+            return
+        }
+
+        // Send a verification request to the new email.
+        firebaseUser.verifyBeforeUpdateEmail(cleanEmail)
+            .addOnSuccessListener {
+                onResult(
+                    true,
+                    "A verification email has been sent to $cleanEmail. Verify it to complete your email change."
+                )
+            }
+            .addOnFailureListener { exception ->
+                onResult(
+                    false,
+                    exception.message
+                        ?: "Unable to update your email. You may need to log in again."
+                )
+            }
+    }
+
+
+    // =========================================================
+    // REFRESH AND SYNC VERIFIED EMAIL
+    // =========================================================
+
+    fun refreshEmailAfterVerification(
+        onResult: (Boolean, String, String?) -> Unit
+    ) {
+        val firebaseUser = auth.currentUser
+
+        if (firebaseUser == null) {
+            onResult(false, "Please log in again.", null)
+            return
+        }
+
+        firebaseUser.reload()
+            .addOnSuccessListener {
+
+                val refreshedUser = auth.currentUser
+                val updatedEmail = refreshedUser?.email
+                    ?.trim()
+                    ?.lowercase()
+
+                if (updatedEmail.isNullOrBlank()) {
+                    onResult(
+                        false,
+                        "Unable to retrieve your updated email.",
+                        null
+                    )
+                    return@addOnSuccessListener
+                }
+
+                firestore.collection("users")
+                    .document(firebaseUser.uid)
+                    .update("email", updatedEmail)
+                    .addOnSuccessListener {
+                        onResult(
+                            true,
+                            "Your email address has been updated successfully.",
+                            updatedEmail
+                        )
+                    }
+                    .addOnFailureListener { exception ->
+                        onResult(
+                            false,
+                            exception.message
+                                ?: "Your email was verified, but your FishTrail profile could not be updated.",
+                            null
+                        )
+                    }
+            }
+            .addOnFailureListener { exception ->
+                onResult(
+                    false,
+                    exception.message
+                        ?: "Unable to refresh your account. Please try again.",
+                    null
+                )
+            }
+    }
+
+
     // =========================================================
     // LOGOUT
     // =========================================================
@@ -649,6 +817,18 @@ class AuthViewModel : ViewModel() {
 
     fun isUserLoggedIn(): Boolean {
         return auth.currentUser != null
+    }
+
+    // =========================================================
+    // CURRENT USER HELPERS
+    // =========================================================
+
+    fun getCurrentUserEmail(): String {
+        return auth.currentUser?.email?.trim()?.lowercase() ?: ""
+    }
+
+    fun getCurrentUserDisplayName(): String {
+        return auth.currentUser?.displayName?.trim() ?: ""
     }
 
     // =========================================================

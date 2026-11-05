@@ -57,7 +57,7 @@ Users can:
 * Search for fishing locations
 * View location information
 * Use map-based location selection when recording fishing activities
-* Use Google map direction capabilities
+* Use Google Maps direction capabilities
 
 ### Fishing History
 
@@ -240,6 +240,7 @@ Depending on the features being used, these can include:
 
 * Location permission
 * Internet access
+* Notification permission
 
 Users remain in control of whether location access is granted to the application.
 
@@ -350,29 +351,6 @@ This approach also makes it easier to add additional languages in future version
 
 ---
 
-## Future Improvements
-
-Planned and potential future improvements include:
-
-* REST API integration
-* Cloud data synchronisation
-* Automatic offline/online synchronisation
-* Google Sign-In / SSO
-* Push notifications
-* Improved fishing spot search
-* Fishing spot recommendations
-* Weather information
-* Advanced catch statistics
-* Catch photos
-* Species identification
-* Fishing trip tracking
-* Improved map functionality
-* Additional South African languages
-* Cloud backup
-* User profiles
-* Social fishing features
-
----
 
 ## Project Goals
 
@@ -441,8 +419,6 @@ Important security considerations include:
 * Avoiding hard-coded credentials
 * Protecting database access
 * Applying appropriate Android permissions
-
-For production deployment, authentication and password storage will use secure, industry-standard mechanisms rather than storing plaintext passwords.
 
 ---
 

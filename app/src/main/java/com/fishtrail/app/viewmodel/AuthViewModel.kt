@@ -1,6 +1,8 @@
 package com.fishtrail.app.viewmodel
 
 import android.content.Context
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.fishtrail.app.notifications.FcmTokenManager
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -63,6 +65,11 @@ class AuthViewModel : ViewModel() {
                     onResult = { success: Boolean, message: String ->
 
                         if (success) {
+
+                            FcmTokenManager.registerCurrentDevice(
+                                firebaseUser.uid
+                            )
+
                             onResult(
                                 true,
                                 "Registration successful."
@@ -222,6 +229,8 @@ class AuthViewModel : ViewModel() {
                             return@addOnSuccessListener
                         }
 
+                        FcmTokenManager.registerCurrentDevice(uid)
+
                         onResult(
                             true,
                             "Login successful.",
@@ -264,20 +273,17 @@ class AuthViewModel : ViewModel() {
                 val credentialManager =
                     CredentialManager.create(context)
 
-                val googleIdOption =
-                    GetGoogleIdOption.Builder()
-                        .setServerClientId(
-                            context.getString(
-                                R.string.default_web_client_id
-                            )
+                val googleSignInOption =
+                    GetSignInWithGoogleOption.Builder(
+                        serverClientId = context.getString(
+                            R.string.default_web_client_id
                         )
-                        .setFilterByAuthorizedAccounts(false)
-                        .setAutoSelectEnabled(false)
+                    )
                         .build()
 
                 val request =
                     GetCredentialRequest.Builder()
-                        .addCredentialOption(googleIdOption)
+                        .addCredentialOption(googleSignInOption)
                         .build()
 
                 val result =
@@ -414,6 +420,8 @@ class AuthViewModel : ViewModel() {
                                 cleanEmail
                             )
 
+                    FcmTokenManager.registerCurrentDevice(uid)
+
                     onResult(
                         true,
                         "Google sign-in successful.",
@@ -512,6 +520,8 @@ class AuthViewModel : ViewModel() {
             null
         }
             .addOnSuccessListener {
+
+                FcmTokenManager.registerCurrentDevice(uid)
 
                 onResult(
                     true,
@@ -808,7 +818,17 @@ class AuthViewModel : ViewModel() {
     // =========================================================
 
     fun logout() {
-        auth.signOut()
+
+        val uid = auth.currentUser?.uid
+
+        if (uid.isNullOrBlank()) {
+            auth.signOut()
+            return
+        }
+
+        FcmTokenManager.removeCurrentDevice(uid) {
+            auth.signOut()
+        }
     }
 
     // =========================================================

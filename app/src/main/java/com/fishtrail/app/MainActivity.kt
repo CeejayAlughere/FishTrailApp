@@ -1,9 +1,9 @@
-
 package com.fishtrail.app
 
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -25,16 +25,24 @@ class MainActivity : ComponentActivity() {
 
     private var darkModeEnabled by mutableStateOf(false)
 
-    // Request notification permission from the user.
+    // Stores a destination requested by an FCM notification.
+    private var pendingNotificationRoute by mutableStateOf<String?>(null)
+
     private val notificationPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
 
             if (isGranted) {
-                Log.d("FishTrailFCM", "Notification permission granted")
+                Log.d(
+                    "FishTrailFCM",
+                    "Notification permission granted."
+                )
             } else {
-                Log.d("FishTrailFCM", "Notification permission denied")
+                Log.d(
+                    "FishTrailFCM",
+                    "Notification permission denied."
+                )
             }
         }
 
@@ -44,7 +52,10 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        // Create the notification channel.
+        // Check whether the app was opened through a notification.
+        pendingNotificationRoute =
+            extractNotificationRoute(intent)
+
         createNotificationChannel()
 
         splashScreen.setOnExitAnimationListener { splashScreenView ->
@@ -103,6 +114,7 @@ class MainActivity : ComponentActivity() {
             animatorSet.start()
         }
 
+        // Initialise Google Places.
         if (!Places.isInitialized()) {
 
             Places.initializeWithNewPlacesApiEnabled(
@@ -111,10 +123,7 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        /*
-         * Load the saved Dark Mode preference once when
-         * the application starts.
-         */
+        // Load saved dark mode preference.
         darkModeEnabled =
             AppPreferences.isDarkModeEnabled(
                 applicationContext
@@ -129,27 +138,80 @@ class MainActivity : ComponentActivity() {
 
                 FishTrailNavigation(
                     darkModeEnabled = darkModeEnabled,
+
                     onDarkModeChanged = { enabled ->
 
-                        /*
-                         * Save the user's preference.
-                         */
                         AppPreferences.setDarkModeEnabled(
                             applicationContext,
                             enabled
                         )
 
-                        /*
-                         * Update the Compose state.
-                         */
                         darkModeEnabled = enabled
+                    },
+
+                    notificationRoute = pendingNotificationRoute,
+
+                    onNotificationRouteHandled = {
+                        pendingNotificationRoute = null
                     }
                 )
             }
         }
 
-        // Request notification permission on first launch.
         requestNotificationPermission()
+    }
+
+    // Called when an existing MainActivity receives a new Intent.
+    override fun onNewIntent(intent: Intent) {
+
+        super.onNewIntent(intent)
+
+        setIntent(intent)
+
+        pendingNotificationRoute =
+            extractNotificationRoute(intent)
+
+        Log.d(
+            "FishTrailFCM",
+            "New notification intent received."
+        )
+    }
+
+    // Determine whether this launch came from an FCM notification.
+    private fun extractNotificationRoute(
+        intent: Intent?
+    ): String? {
+
+        val extras = intent?.extras ?: return null
+
+        val explicitRoute =
+            extras.getString(
+                FishTrailFirebaseMessagingService.EXTRA_NOTIFICATION_ROUTE
+            )
+                ?: extras.getString("route")
+                ?: extras.getString("screen")
+
+        if (!explicitRoute.isNullOrBlank()) {
+            return explicitRoute
+        }
+
+        // Firebase-generated notifications may not contain our
+        // custom route extra, but can contain Firebase metadata.
+        val isFirebaseNotification =
+            extras.keySet().any { key ->
+
+                key.startsWith("google.") ||
+                        key.startsWith("gcm.")
+            }
+
+        return if (isFirebaseNotification) {
+
+            FishTrailFirebaseMessagingService
+                .DEFAULT_NOTIFICATION_ROUTE
+
+        } else {
+            null
+        }
     }
 
     private fun createNotificationChannel() {
@@ -161,6 +223,7 @@ class MainActivity : ComponentActivity() {
                 FishTrailFirebaseMessagingService.CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
+
                 description =
                     "Fishing alerts and updates from FishTrail"
             }
@@ -174,7 +237,6 @@ class MainActivity : ComponentActivity() {
 
     private fun requestNotificationPermission() {
 
-        // Runtime notification permission is required on Android 13+.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 
             val permissionGranted =
@@ -187,21 +249,24 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
-            // Avoid repeatedly displaying the permission prompt.
             val preferences = getSharedPreferences(
                 "fishtrail_notification_preferences",
                 MODE_PRIVATE
             )
 
-            val alreadyRequested = preferences.getBoolean(
-                "notification_permission_requested",
-                false
-            )
+            val alreadyRequested =
+                preferences.getBoolean(
+                    "notification_permission_requested",
+                    false
+                )
 
             if (!alreadyRequested) {
 
                 preferences.edit()
-                    .putBoolean("notification_permission_requested", true)
+                    .putBoolean(
+                        "notification_permission_requested",
+                        true
+                    )
                     .apply()
 
                 notificationPermissionLauncher.launch(

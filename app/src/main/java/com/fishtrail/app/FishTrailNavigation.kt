@@ -24,7 +24,6 @@ import com.fishtrail.app.data.FishTrailDatabase
 import com.fishtrail.app.history.HistoryScreen
 import com.fishtrail.app.home.HomeScreen
 import com.fishtrail.app.map.MapScreen
-import com.fishtrail.app.settings.AppPreferences
 import com.fishtrail.app.settings.SettingsScreen
 import com.fishtrail.app.viewmodel.AuthViewModel
 import com.fishtrail.app.viewmodel.AuthViewModelFactory
@@ -34,17 +33,13 @@ import com.fishtrail.app.viewmodel.CatchViewModelFactory
 @Composable
 fun FishTrailNavigation(
     darkModeEnabled: Boolean,
-    onDarkModeChanged: (Boolean) -> Unit
+    onDarkModeChanged: (Boolean) -> Unit,
+    notificationRoute: String? = null,
+    onNotificationRouteHandled: () -> Unit = {}
 ) {
 
     val navController = rememberNavController()
     val context = LocalContext.current
-
-    var isDarkModeEnabled by remember {
-        mutableStateOf(
-            AppPreferences.isDarkModeEnabled(context)
-        )
-    }
 
     val database = remember {
         FishTrailDatabase.getDatabase(context)
@@ -66,6 +61,7 @@ fun FishTrailNavigation(
     }
 
     LaunchedEffect(loggedInUsername) {
+
         if (loggedInUsername.isNotBlank()) {
             catchViewModel.syncPendingCatches()
         }
@@ -87,9 +83,66 @@ fun FishTrailNavigation(
         mutableStateOf(false)
     }
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val navBackStackEntry by
+    navController.currentBackStackEntryAsState()
 
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute =
+        navBackStackEntry?.destination?.route
+
+    // Handle notification navigation after successful login.
+    LaunchedEffect(
+        notificationRoute,
+        loggedInUsername,
+        currentRoute
+    ) {
+
+        val requestedRoute =
+            notificationRoute
+                ?.trim()
+                ?.lowercase()
+                ?: return@LaunchedEffect
+
+        // Never allow notification navigation to bypass login.
+        if (loggedInUsername.isBlank()) {
+            return@LaunchedEffect
+        }
+
+        if (currentRoute == null ||
+            currentRoute == "login" ||
+            currentRoute == "register"
+        ) {
+            return@LaunchedEffect
+        }
+
+        // Only allow destinations that currently exist.
+        val destination = when (requestedRoute) {
+
+            "home" -> "home"
+            "catchlog" -> "catchlog"
+            "map" -> "map"
+            "history" -> "history"
+            "settings" -> "settings"
+
+            else -> null
+        }
+
+        if (destination != null && currentRoute != destination) {
+
+            navController.navigate(destination) {
+
+                popUpTo("home") {
+                    saveState = true
+                }
+
+                launchSingleTop = true
+
+                restoreState = true
+            }
+        }
+
+        // Clear the pending notification after processing it.
+        onNotificationRouteHandled()
+    }
 
     val showBottomBar = currentRoute in listOf(
         "home",
@@ -102,12 +155,14 @@ fun FishTrailNavigation(
     val bottomBarRoute = currentRoute ?: "home"
 
     Scaffold(
+
         bottomBar = {
 
             if (showBottomBar) {
 
                 BottomNavigationBar(
                     currentRoute = bottomBarRoute,
+
                     onItemClick = { route ->
 
                         navController.navigate(route) {
@@ -124,6 +179,7 @@ fun FishTrailNavigation(
                 )
             }
         }
+
     ) { paddingValues ->
 
         Box(
@@ -177,18 +233,22 @@ fun FishTrailNavigation(
                         catchViewModel = catchViewModel,
                         authViewModel = authViewModel,
                         username = loggedInUsername,
+
                         onLogCatchClick = {
                             navController.navigate("catchlog")
                         },
+
                         onOpenMapClick = {
                             navController.navigate("map")
                         },
 
                         onLogoutClick = {
+
                             authViewModel.logout()
                             loggedInUsername = ""
 
                             navController.navigate("login") {
+
                                 popUpTo("home") {
                                     inclusive = true
                                 }
@@ -269,10 +329,12 @@ fun FishTrailNavigation(
                         },
 
                         onLogoutClick = {
+
                             authViewModel.logout()
                             loggedInUsername = ""
 
                             navController.navigate("login") {
+
                                 popUpTo("home") {
                                     inclusive = true
                                 }

@@ -1,34 +1,39 @@
-
 package com.fishtrail.app.notifications
 
-import com.google.firebase.auth.FirebaseAuth
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.fishtrail.app.MainActivity
 import com.fishtrail.app.R
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class FishTrailFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
+        private const val TAG = "FishTrailFCM"
+
         const val CHANNEL_ID = "fishtrail_notifications"
         const val CHANNEL_NAME = "FishTrail Notifications"
+
+        const val EXTRA_NOTIFICATION_ROUTE =
+            "com.fishtrail.app.EXTRA_NOTIFICATION_ROUTE"
+
+        const val DEFAULT_NOTIFICATION_ROUTE = "home"
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
 
-        android.util.Log.d(
-            "FishTrailFCM",
-            "New FCM token received."
-        )
+        Log.d(TAG, "New FCM token received.")
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
 
@@ -48,64 +53,92 @@ class FishTrailFirebaseMessagingService : FirebaseMessagingService() {
             ?: message.data["body"]
             ?: "You have a new notification."
 
-        showNotification(title, body)
+        val route = message.data["route"]
+            ?.takeIf { it.isNotBlank() }
+            ?: message.data["screen"]
+                ?.takeIf { it.isNotBlank() }
+            ?: DEFAULT_NOTIFICATION_ROUTE
+
+        showNotification(title, body, route)
     }
 
+    private fun showNotification(
+        title: String,
+        body: String,
+        route: String
+    ) {
 
-    private fun showNotification(title: String, body: String) {
         createNotificationChannel()
 
-        // Check whether notification permission is granted.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                android.util.Log.w(
-                    "FishTrailFCM",
-                    "Notification permission has not been granted."
-                )
-                return
-            }
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w(TAG, "Notification permission has not been granted.")
+            return
         }
 
-        val intent = Intent(this, MainActivity::class.java).apply {
+        val intent = Intent(
+            this,
+            MainActivity::class.java
+        ).apply {
+
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+            putExtra(
+                EXTRA_NOTIFICATION_ROUTE,
+                route
+            )
         }
+
+        val notificationId = System.currentTimeMillis().toInt()
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            notificationId,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                    PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(
+            this,
+            CHANNEL_ID
+        )
             .setSmallIcon(R.drawable.ic_fishing_hook)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(body)
+            )
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
 
-        NotificationManagerCompat.from(this).notify(
-            System.currentTimeMillis().toInt(),
-            notification
-        )
+        NotificationManagerCompat
+            .from(this)
+            .notify(notificationId, notification)
+
+        Log.d(TAG, "Notification displayed successfully.")
     }
 
-
     private fun createNotificationChannel() {
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Fishing alerts and updates from FishTrail"
+
+                description =
+                    "Fishing alerts and updates from FishTrail"
             }
 
             val manager = getSystemService(

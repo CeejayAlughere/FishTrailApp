@@ -66,6 +66,7 @@ import com.fishtrail.app.viewmodel.CatchViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @Composable
 fun CatchLogScreen(
@@ -80,30 +81,30 @@ fun CatchLogScreen(
     val context = LocalContext.current
     val locationManager = remember { LocationManager(context) }
 
-    var species by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
-    var length by remember { mutableStateOf("") }
-    var bait by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var locationName by remember { mutableStateOf("") }
+    var species by rememberSaveable { mutableStateOf("") }
+    var weight by rememberSaveable { mutableStateOf("") }
+    var length by rememberSaveable { mutableStateOf("") }
+    var bait by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    var locationName by rememberSaveable { mutableStateOf("") }
 
-    var date by remember {
+    var date by rememberSaveable {
         mutableStateOf(
             SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
         )
     }
 
-    var time by remember {
+    var time by rememberSaveable {
         mutableStateOf(
             SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
         )
     }
 
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
+    var latitude by rememberSaveable { mutableStateOf<Double?>(null) }
+    var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
 
-    var message by remember { mutableStateOf("") }
-    var isSuccess by remember { mutableStateOf(false) }
+    var message by rememberSaveable { mutableStateOf("") }
+    var isSuccess by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(selectedLatitude, selectedLongitude, selectedLocationName) {
         if (selectedLatitude != null && selectedLongitude != null) {

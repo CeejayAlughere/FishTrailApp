@@ -831,6 +831,59 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+
+    // =========================================================
+    // RESTORE EXISTING FIREBASE SESSION
+    // =========================================================
+
+    fun restoreUserSession(
+        onResult: (String?, String?) -> Unit
+    ) {
+        val firebaseUser = auth.currentUser
+
+        if (firebaseUser == null) {
+            onResult(null, null)
+            return
+        }
+
+        firestore.collection("users")
+            .document(firebaseUser.uid)
+            .get()
+            .addOnSuccessListener { document ->
+
+                if (!document.exists()) {
+                    onResult(
+                        null,
+                        "Your FishTrail profile could not be found."
+                    )
+                    return@addOnSuccessListener
+                }
+
+                val username = document
+                    .getString("username")
+                    ?.trim()
+                    ?.lowercase()
+                    .orEmpty()
+
+                if (username.isBlank()) {
+                    onResult(
+                        null,
+                        "Your FishTrail profile has no username."
+                    )
+                    return@addOnSuccessListener
+                }
+
+                onResult(username, null)
+            }
+            .addOnFailureListener {
+                onResult(
+                    null,
+                    "Unable to load your profile. Check your internet connection and try again."
+                )
+            }
+    }
+
+
     // =========================================================
     // CHECK LOGIN STATE
     // =========================================================

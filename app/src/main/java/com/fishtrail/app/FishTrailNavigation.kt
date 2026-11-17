@@ -29,6 +29,13 @@ import com.fishtrail.app.viewmodel.AuthViewModel
 import com.fishtrail.app.viewmodel.AuthViewModelFactory
 import com.fishtrail.app.viewmodel.CatchViewModel
 import com.fishtrail.app.viewmodel.CatchViewModelFactory
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun FishTrailNavigation(
@@ -56,9 +63,39 @@ fun FishTrailNavigation(
         )
     )
 
+
     var loggedInUsername by remember {
         mutableStateOf("")
     }
+
+    var sessionChecked by remember {
+        mutableStateOf(false)
+    }
+
+    var sessionError by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    fun restoreSession() {
+        sessionChecked = false
+        sessionError = null
+
+        authViewModel.restoreUserSession { username, error ->
+
+            if (error != null) {
+                sessionError = error
+            } else {
+                loggedInUsername = username.orEmpty()
+            }
+
+            sessionChecked = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        restoreSession()
+    }
+
 
     LaunchedEffect(loggedInUsername) {
 
@@ -154,6 +191,46 @@ fun FishTrailNavigation(
 
     val bottomBarRoute = currentRoute ?: "home"
 
+
+    if (!sessionChecked || sessionError != null) {
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+
+            if (!sessionChecked) {
+
+                CircularProgressIndicator()
+
+            } else {
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(24.dp)
+                ) {
+
+                    Text(
+                        text = sessionError
+                            ?: "Unable to restore your session."
+                    )
+
+                    Button(
+                        onClick = {
+                            restoreSession()
+                        }
+                    ) {
+                        Text("Retry")
+                    }
+                }
+            }
+        }
+
+        return
+    }
+
+
     Scaffold(
 
         bottomBar = {
@@ -190,7 +267,8 @@ fun FishTrailNavigation(
 
             NavHost(
                 navController = navController,
-                startDestination = "login"
+                startDestination =
+                    if (loggedInUsername.isNotBlank()) "home" else "login"
             ) {
 
                 composable("login") {

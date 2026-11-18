@@ -3,6 +3,7 @@ package com.fishtrail.app.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(tableName = "catches")
 data class Catch(
@@ -33,5 +34,7 @@ data class Catch(
     val longitude: Double?,
 
     // Synchronisation status
-    val syncStatus: String = "PENDING"
+    val syncStatus: String = "PENDING",
+    // Stable Firestore document identifier
+    val cloudId: String = UUID.randomUUID().toString()
 )

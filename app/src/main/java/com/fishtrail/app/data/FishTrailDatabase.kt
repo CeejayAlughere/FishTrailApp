@@ -13,8 +13,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         User::class,
         Catch::class
     ],
-    version = 9,
-    exportSchema = false
+    version = 10,
+    exportSchema = true
 )
 abstract class FishTrailDatabase : RoomDatabase() {
 
@@ -68,6 +68,33 @@ abstract class FishTrailDatabase : RoomDatabase() {
                 }
             }
 
+
+
+        internal val MIGRATION_9_10 =
+            object : Migration(9, 10) {
+
+                override fun migrate(
+                    database: SupportSQLiteDatabase
+                ) {
+                    database.execSQL(
+                        """
+                ALTER TABLE catches
+                ADD COLUMN cloudId TEXT NOT NULL DEFAULT ''
+                """.trimIndent()
+                    )
+
+                    // Preserve the original Firestore document IDs
+                    // for all catches created before version 10.
+                    database.execSQL(
+                        """
+                UPDATE catches
+                SET cloudId = CAST(id AS TEXT)
+                """.trimIndent()
+                    )
+                }
+            }
+
+
         fun getDatabase(context: Context): FishTrailDatabase {
 
             return INSTANCE ?: synchronized(this) {
@@ -80,7 +107,8 @@ abstract class FishTrailDatabase : RoomDatabase() {
                     .addMigrations(
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
                     )
                     .build()
 

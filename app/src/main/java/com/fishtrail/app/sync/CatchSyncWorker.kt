@@ -84,7 +84,8 @@ class CatchSyncWorker(
                     "time" to catch.time,
                     "locationName" to catch.locationName,
                     "latitude" to catch.latitude,
-                    "longitude" to catch.longitude
+                    "longitude" to catch.longitude,
+                    "cloudId" to catch.cloudId,
                 )
 
                 // Use the Room ID as the Firestore document ID.
@@ -93,7 +94,7 @@ class CatchSyncWorker(
                     .collection("users")
                     .document(uid)
                     .collection("catches")
-                    .document(catch.id.toString())
+                    .document(catch.cloudId)
                     .set(catchData)
                     .await()
 

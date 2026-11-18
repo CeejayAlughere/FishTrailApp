@@ -37,6 +37,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDir("$projectDir/schemas")
+        }
+    }
 }
 
 dependencies {
@@ -50,6 +56,7 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,6 +74,9 @@ dependencies {
     implementation(libs.google.places)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
+    androidTestImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation(libs.androidx.work.testing)
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-auth")
@@ -79,4 +89,8 @@ dependencies {
     // Offline synchronisation dependencies
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }

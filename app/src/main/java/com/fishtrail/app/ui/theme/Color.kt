@@ -67,3 +67,6 @@ val OnErrorContainerDark = Color(0xFFFFDAD6)
 
 val OutlineDark = Color(0xFF8A9295)
 val OutlineVariantDark = Color(0xFF40484B)
+
+val HarbourInk = Color(0xFF102E34)
+val TideMint = Color(0xFF9DE8C4)

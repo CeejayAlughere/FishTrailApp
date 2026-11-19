@@ -301,10 +301,6 @@ FishTrail uses Google Maps functionality for its location features.
 
 A valid Google Maps API key must be configured for the map functionality to work correctly.
 
-The API key should **not** be committed directly to a public Git repository.
-
-Before publishing the project, make sure sensitive credentials and API keys are protected using an appropriate configuration method.
-
 ---
 
 ## Running the Application

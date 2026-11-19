@@ -1,5 +1,14 @@
 package com.fishtrail.app.home
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.fishtrail.app.ui.theme.HarbourInk
+import com.fishtrail.app.ui.theme.TideMint
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,11 +37,9 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SetMeal
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -49,7 +56,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -116,79 +122,57 @@ fun HomeScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // =====================================================
-        // Welcome Hero Banner
-        // =====================================================
-        Card(
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            shape = RoundedCornerShape(24.dp),
+            color = HarbourInk,
+            contentColor = Color.White
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Welcome back",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+            Box {
+                Canvas(Modifier.matchParentSize()) {
+                    // Depth contours enter from the right edge like lines on a lake chart.
+                    val center = Offset(size.width * 1.08f, size.height * 0.30f)
+                    for (ring in 1..8) {
+                        val radius = ring * 15.dp.toPx()
+                        drawOval(
+                            color = TideMint.copy(alpha = 0.16f),
+                            topLeft = Offset(center.x - radius, center.y - radius * 1.35f),
+                            size = Size(radius * 2, radius * 2.7f),
+                            style = Stroke(width = 1.dp.toPx())
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = displayName,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "Your digital fishing logbook & spot guide",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                    )
                 }
-
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_fishing_hook),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_fishing_hook),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text("FishTrail", style = MaterialTheme.typography.titleMedium)
+                    }
+                    Column {
+                        Text("Welcome back", style = MaterialTheme.typography.bodyMedium, color = TideMint)
+                        Text(displayName, style = MaterialTheme.typography.headlineLarge)
+                    }
+                    Button(
+                        onClick = onLogCatchClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = TideMint, contentColor = HarbourInk)
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Log a catch")
+                    }
                 }
             }
         }
 
-        // =====================================================
-        // Fishing Statistics
-        // =====================================================
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -199,7 +183,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Fishing Statistics",
+                    text = "Fishing statistics",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -210,25 +194,36 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 StatCard(
-                    title = "Total Catches",
+                    title = "Total catches",
                     value = totalCatches.toString(),
                     icon = Icons.Filled.SetMeal,
                     modifier = Modifier.weight(1f)
                 )
 
                 StatCard(
-                    title = "Largest Catch",
-                    value = if (largestCatch != null) "${largestCatch.weight} kg" else "--",
+                    title = "Largest catch",
+                    value = if (largestCatch != null) "${largestCatch.weight} kg" else "—",
                     icon = Icons.Filled.Scale,
                     modifier = Modifier.weight(1f)
                 )
-
-                StatCard(
-                    title = "Favorite Species",
-                    value = favouriteSpecies ?: "--",
-                    icon = Icons.Filled.Star,
-                    modifier = Modifier.weight(1f)
-                )
+            }
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Text("Favourite species", style = MaterialTheme.typography.labelMedium)
+                        Text(favouriteSpecies ?: "—", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
             }
         }
 
@@ -237,7 +232,7 @@ fun HomeScreen(
         // =====================================================
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
-                text = "Recent Catch",
+                text = "Recent catch",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -247,7 +242,7 @@ fun HomeScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 if (recentCatch == null) {
@@ -267,14 +262,14 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "No Catches Recorded Yet",
+                            text = "No catches recorded yet",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
-                            text = "Tap 'Log a Catch' above to record your first catch!",
+                            text = "Log your first catch to see it here.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
@@ -317,7 +312,7 @@ fun HomeScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Most Recent Log",
+                                        text = "Latest entry",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -397,7 +392,7 @@ fun HomeScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Place,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -434,16 +429,21 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Angler Tip",
+                        text = "Angler tip",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "Use GPS pinning in Catch Log to pinpoint your hot spots accurately on the Map!",
+                        text = "Pin a location when you log a catch to find that spot again.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f)
                     )
+                    OutlinedButton(onClick = onOpenMapClick) {
+                        Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Open map")
+                    }
                 }
             }
         }
@@ -462,7 +462,7 @@ private fun StatCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shape = RoundedCornerShape(14.dp)
     ) {
         Column(

@@ -23,8 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import com.fishtrail.app.ui.theme.HarbourInk
-import com.fishtrail.app.ui.theme.TideMint
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
@@ -42,6 +40,7 @@ fun BottomNavigationBar(
     onItemClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
     Box(
         modifier = modifier.fillMaxWidth()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
@@ -50,9 +49,9 @@ fun BottomNavigationBar(
     ) {
         Surface(
             modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth(),
-            shape = RoundedCornerShape(26.dp),
-            color = HarbourInk,
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = colors.surfaceContainer,
+            border = BorderStroke(1.dp, colors.outlineVariant),
             shadowElevation = 5.dp
         ) {
             Row(
@@ -63,7 +62,7 @@ fun BottomNavigationBar(
                     val selected = currentRoute == tab.route
                     val isCatch = tab.route == "catchlog"
                     val indicator by animateColorAsState(
-                        if (isCatch) TideMint else if (selected) Color.White.copy(alpha = 0.15f)
+                        if (isCatch) colors.primary else if (selected) colors.secondaryContainer
                         else Color.Transparent,
                         label = "Tab indicator"
                     )
@@ -80,13 +79,13 @@ fun BottomNavigationBar(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(tab.icon, contentDescription = null,
-                                tint = if (isCatch) HarbourInk else if (selected) TideMint else Color.White,
+                                tint = if (isCatch) colors.onPrimary else if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant,
                                 modifier = Modifier.size(22.dp))
                         }
                         Text(tab.label, style = MaterialTheme.typography.labelSmall,
-                            color = if (selected) TideMint else Color.White)
+                            color = if (selected) colors.primary else colors.onSurfaceVariant)
                         Box(Modifier.size(width = 12.dp, height = 2.dp)
-                            .background(if (selected) TideMint else Color.Transparent, RoundedCornerShape(1.dp)))
+                            .background(if (selected) colors.primary else Color.Transparent, RoundedCornerShape(1.dp)))
                     }
                 }
             }

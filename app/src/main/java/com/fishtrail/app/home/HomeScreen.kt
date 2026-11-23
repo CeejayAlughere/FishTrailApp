@@ -4,10 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import com.fishtrail.app.ui.theme.HarbourInk
-import com.fishtrail.app.ui.theme.TideMint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +71,7 @@ fun HomeScreen(
     onOpenMapClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val catches by catchViewModel.catches.collectAsState()
 
     var displayName by remember(username) {
@@ -124,9 +122,9 @@ fun HomeScreen(
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            color = HarbourInk,
-            contentColor = Color.White
+            shape = MaterialTheme.shapes.large,
+            color = colors.primaryContainer,
+            contentColor = colors.onPrimaryContainer
         ) {
             Box {
                 Canvas(Modifier.matchParentSize()) {
@@ -135,7 +133,7 @@ fun HomeScreen(
                     for (ring in 1..8) {
                         val radius = ring * 15.dp.toPx()
                         drawOval(
-                            color = TideMint.copy(alpha = 0.16f),
+                            color = colors.onPrimaryContainer.copy(alpha = 0.12f),
                             topLeft = Offset(center.x - radius, center.y - radius * 1.35f),
                             size = Size(radius * 2, radius * 2.7f),
                             style = Stroke(width = 1.dp.toPx())
@@ -158,12 +156,12 @@ fun HomeScreen(
                         Text("FishTrail", style = MaterialTheme.typography.titleMedium)
                     }
                     Column {
-                        Text("Welcome back", style = MaterialTheme.typography.bodyMedium, color = TideMint)
+                        Text("Welcome back", style = MaterialTheme.typography.bodyMedium, color = colors.onPrimaryContainer)
                         Text(displayName, style = MaterialTheme.typography.headlineLarge)
                     }
                     Button(
                         onClick = onLogCatchClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = TideMint, contentColor = HarbourInk)
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.primary, contentColor = colors.onPrimary)
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -271,7 +269,7 @@ fun HomeScreen(
                         Text(
                             text = "Log your first catch to see it here.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 } else {
@@ -437,7 +435,7 @@ fun HomeScreen(
                     Text(
                         text = "Pin a location when you log a catch to find that spot again.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f)
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     OutlinedButton(onClick = onOpenMapClick) {
                         Icon(Icons.Filled.Map, contentDescription = null, modifier = Modifier.size(18.dp))

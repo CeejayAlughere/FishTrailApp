@@ -1,5 +1,7 @@
 # FishTrail
 
+<img src="docs/fishtrail-icon.png" width="96" alt="FishTrail app icon">
+
 FishTrail is a native Android fishing logbook for anglers who want to remember what they caught, which bait worked and where to cast again. Log a catch at the water, keep it on the device and revisit the spot on Google Maps.
 
 **Kotlin · Jetpack Compose · Room · Firebase · Google Maps**
